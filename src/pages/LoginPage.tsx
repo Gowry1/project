@@ -80,7 +80,7 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
-            NuroVox
+            NeuroVox
           </h1>
           <p className="text-gray-600">
             Sign in to access your voice analysis dashboard
