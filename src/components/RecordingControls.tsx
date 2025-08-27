@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Mic, Square, Timer } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +23,8 @@ const RecordingControls: React.FC = () => {
     "I scream, you scream, we all scream for ice cream! The ice cream truck plays music as it drives through the neighborhood on sunny days.",
     "Around the rugged rock the ragged rascal ran. This alliterative sentence helps test the pronunciation of the 'R' sound in speech analysis.",
   ];
+
+  const savingRef = useRef(false);
 
   const navigate = useNavigate();
 
@@ -99,12 +101,11 @@ const RecordingControls: React.FC = () => {
   };
 
   const handleStop = async () => {
-    // Prevent multiple simultaneous calls
-    if (isProcessing || !isRecording) {
-      console.log("Stop recording already in progress or not recording");
+    if (isProcessing || !isRecording || savingRef.current) {
+      console.log("Stop ignored (processing/not recording/already saved)");
       return;
     }
-
+    savingRef.current = true; // NEW: lock immediately
     setIsProcessing(true);
 
     try {
@@ -112,17 +113,27 @@ const RecordingControls: React.FC = () => {
       const result = await stopRecording();
       console.log("Recording result:", result);
 
-      // Save result to database
+      // Save result to database (single shot) - only if confidence_score is valid
       try {
-        const saveResponse = await historyService.saveRecordingResult({
-          disease_status: result.prediction || "NORMAL",
-          confidence_score: result.percentage_normal || 50,
-          recording_duration: recordingTime,
-        });
-        console.log("Result saved to database:", saveResponse);
+        // Only save if we have a valid confidence score
+        if (
+          typeof result.percentage_normal === "number" &&
+          result.percentage_normal !== null
+        ) {
+          const saveResponse = await historyService.saveRecordingResult({
+            disease_status: result.prediction || "NORMAL",
+            percentage_normal: result.percentage_normal,
+            recording_duration: recordingTime,
+          });
+          console.log("Result saved to database:", saveResponse);
+        } else {
+          console.log(
+            "Skipping database save - no valid confidence score available"
+          );
+        }
       } catch (saveError) {
         console.error("Failed to save result to database:", saveError);
-        // Continue with the flow even if saving fails
+        // proceed with UI anyway
       }
 
       const newId = `rec_${Date.now()}`;
@@ -131,10 +142,13 @@ const RecordingControls: React.FC = () => {
         id: newId,
         timestamp: new Date(),
         duration: recordingTime,
-        audioUrl: "", // Set actual URL if you have it
+        audioUrl: "",
         result: {
           probability: result.prediction === "NORMAL" ? 0.2 : 0.8,
-          confidence: (result.percentage_normal || 50) / 100,
+          confidence:
+            typeof result.percentage_normal === "number"
+              ? result.percentage_normal / 100
+              : 0.5,
           features: {
             jitter: 0.01,
             shimmer: 0.02,
@@ -144,17 +158,21 @@ const RecordingControls: React.FC = () => {
           prediction: result.prediction || "NORMAL",
           normal_count: result.normal_count || 0,
           total_words: result.total_words || 1,
-          percentage_normal: result.percentage_normal || 50,
+          percentage_normal:
+            typeof result.percentage_normal === "number"
+              ? result.percentage_normal
+              : 50,
         },
       });
 
       navigate(`/results/${newId}`);
     } catch (error) {
       console.error("Error stopping recording:", error);
-      // Show user-friendly error message
       alert("Failed to process recording. Please try again.");
     } finally {
       setIsProcessing(false);
+      // release the lock *after* a tiny delay to avoid fast re-presses
+      setTimeout(() => (savingRef.current = false), 1500);
     }
   };
 

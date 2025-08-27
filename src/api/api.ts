@@ -1,5 +1,5 @@
-import authService from '../services/authService';
-import requestDeduplicationService from '../services/requestDeduplicationService';
+import authService from "../services/authService";
+import requestDeduplicationService from "../services/requestDeduplicationService";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL as string;
 
@@ -7,11 +7,11 @@ const BASE_URL = import.meta.env.VITE_BASE_URL as string;
 const getAuthHeaders = async (): Promise<HeadersInit> => {
   const token = await authService.getValidAccessToken();
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   };
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
   return headers;
@@ -20,15 +20,15 @@ const getAuthHeaders = async (): Promise<HeadersInit> => {
 // Helper function to handle API responses
 const handleApiResponse = async (response: Response) => {
   const result = await response.json();
-console.log('API Response:', result);
+  console.log("API Response:", result);
 
   if (!response.ok) {
     // Handle authentication errors
     if (response.status === 401) {
       // Token might be expired, try to refresh or redirect to login
-      throw new Error('Authentication required. Please log in again.');
+      throw new Error("Authentication required. Please log in again.");
     }
-    throw new Error(result.error || result.message || 'API request failed');
+    throw new Error(result.error || result.message || "API request failed");
   }
 
   return result;
@@ -36,19 +36,19 @@ console.log('API Response:', result);
 
 export const startRecording = async () => {
   try {
-    console.log('API: Starting recording request...');
+    console.log("API: Starting recording request...");
     const headers = await getAuthHeaders();
 
     // Use deduplication service to prevent duplicate calls
     const result = await requestDeduplicationService.executeRequest(
       `${BASE_URL}/start_recording`,
       {
-        method: 'POST',
+        method: "POST",
         headers,
       }
     );
 
-    console.log('API: Start recording successful:', result);
+    console.log("API: Start recording successful:", result);
     return result;
   } catch (error) {
     if (error instanceof Error) {
@@ -61,23 +61,22 @@ export const startRecording = async () => {
   }
 };
 
-
 // Stop Recording
 export const stopRecording = async () => {
   try {
-    console.log('API: Stopping recording request...');
+    console.log("API: Stopping recording request...");
     const headers = await getAuthHeaders();
 
     // Use deduplication service to prevent duplicate calls
     const result = await requestDeduplicationService.executeRequest(
       `${BASE_URL}/stop_recording`,
       {
-        method: 'POST',
+        method: "POST",
         headers,
       }
     );
 
-    console.log('API: Stop recording successful:', result);
+    console.log("API: Stop recording successful:", result);
     return result;
   } catch (error) {
     if (error instanceof Error) {
@@ -97,7 +96,7 @@ export const saveResult = async (data: {
   confidence_score?: number;
 }) => {
   try {
-    console.log('API: Saving result request...');
+    console.log("API: Saving result request...");
     const headers = await getAuthHeaders();
     const body = JSON.stringify(data);
 
@@ -105,13 +104,13 @@ export const saveResult = async (data: {
     const result = await requestDeduplicationService.executeRequest(
       `${BASE_URL}/results`,
       {
-        method: 'POST',
+        method: "POST",
         headers,
         body,
       }
     );
 
-    console.log('API: Save result successful:', result);
+    console.log("API: Save result successful:", result);
     return result;
   } catch (error) {
     if (error instanceof Error) {
@@ -129,7 +128,7 @@ export const getUserResults = async (userId: number) => {
   try {
     const headers = await getAuthHeaders();
     const response = await fetch(`${BASE_URL}/user-result/${userId}`, {
-      method: 'GET',
+      method: "GET",
       headers,
     });
 
@@ -144,4 +143,3 @@ export const getUserResults = async (userId: number) => {
     }
   }
 };
-

@@ -34,6 +34,10 @@ const ResultsPage: React.FC = () => {
     );
   }
 
+  const handleNew = () => {
+    navigate("/record");
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -44,13 +48,13 @@ const ResultsPage: React.FC = () => {
           <ArrowLeft className="h-5 w-5 mr-2" />
           Back to History
         </Link>
-        <Link
-          to="/record"
+        <button
+          onClick={handleNew}
           className="flex items-center justify-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
         >
           <Mic className="h-4 w-4 mr-2" />
           New Recording
-        </Link>
+        </button>
       </div>
 
       <section className="text-center">

@@ -7,7 +7,10 @@ import {
   RegisterRequest,
 } from "../types";
 import { generateMockRecordings } from "../utils/mockData";
-import { startRecording as apiStartRecording, stopRecording as apiStopRecording } from "../api/api";
+import {
+  startRecording as apiStartRecording,
+  stopRecording as apiStopRecording,
+} from "../api/api";
 import authService from "../services/authService";
 
 interface AppContextType {

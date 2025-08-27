@@ -1,7 +1,7 @@
-import authService from './authService';
-import requestDeduplicationService from './requestDeduplicationService';
+import authService from "./authService";
+import requestDeduplicationService from "./requestDeduplicationService";
 
-const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
+const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5000";
 
 export interface UserResult {
   id: number;
@@ -32,27 +32,29 @@ class HistoryService {
     try {
       const accessToken = await authService.getValidAccessToken();
       if (!accessToken) {
-        throw new Error('No valid access token available');
+        throw new Error("No valid access token available");
       }
 
       const response = await fetch(`${BASE_URL}/user-result/${userId}`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
         },
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(
+          errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
       }
 
       const data = await response.json();
       return data;
     } catch (error: any) {
-      console.error('Failed to fetch user history:', error);
-      throw new Error(error.message || 'Failed to fetch recording history');
+      console.error("Failed to fetch user history:", error);
+      throw new Error(error.message || "Failed to fetch recording history");
     }
   }
 
@@ -63,84 +65,121 @@ class HistoryService {
     try {
       const accessToken = await authService.getValidAccessToken();
       if (!accessToken) {
-        throw new Error('No valid access token available');
+        throw new Error("No valid access token available");
       }
 
       const response = await fetch(`${BASE_URL}/my-results`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
         },
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        );
       }
 
       const data = await response.json();
       return data;
     } catch (error: any) {
-      console.error('Failed to fetch current user history:', error);
-      throw new Error(error.message || 'Failed to fetch your recording history');
+      console.error("Failed to fetch current user history:", error);
+      throw new Error(
+        error.message || "Failed to fetch your recording history"
+      );
     }
   }
 
   /**
    * Save a new recording result
    */
-  async saveRecordingResult(data: {
+  // async saveRecordingResult( {
+  //   disease_status: string;
+  //   confidence_score?: number;
+  //   recording_duration?: number;
+  // }): Promise<{ message: string; result_id: number }> {
+  //   try {
+  //     console.log("HistoryService: Saving recording result...");
+  //     const accessToken = await authService.getValidAccessToken();
+  //     if (!accessToken) {
+  //       throw new Error("No valid access token available");
+  //     }
+
+  //     const requestData = {
+  //       disease_status,
+  //       percentage_normal,
+  //       recording_duration,
+  //     };
+
+  //     console.log("requestData", requestData);
+  //     // Use deduplication service to prevent duplicate calls
+  //     const result = await requestDeduplicationService.executeRequest(
+  //       `${BASE_URL}/results`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           Authorization: `Bearer ${accessToken}`,
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify(requestData),
+  //       }
+  //     );
+
+  //     console.log("HistoryService: Save recording result successful:", result);
+  //     return result;
+  //   } catch (error: any) {
+  //     console.error("Failed to save recording result:", error);
+  //     throw new Error(error.message || "Failed to save recording result");
+  //   }
+  // }
+
+  async saveRecordingResult({
+    disease_status,
+    percentage_normal,
+    recording_duration,
+  }: {
     disease_status: string;
-    confidence_score?: number;
+    percentage_normal: number;
     recording_duration?: number;
-  }): Promise<{ message: string; result_id: number }> {
-    try {
-      console.log('HistoryService: Saving recording result...');
-      const accessToken = await authService.getValidAccessToken();
-      if (!accessToken) {
-        throw new Error('No valid access token available');
+  }): Promise<any> {
+    const accessToken = await authService.getValidAccessToken();
+    if (!accessToken) throw new Error("No valid access token available");
+
+    return requestDeduplicationService.executeRequest<any>(
+      `${BASE_URL}/results`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          disease_status,
+          percentage_normal,
+          recording_duration,
+        }),
       }
-
-      const requestData = {
-        disease_status: data.disease_status.toUpperCase(),
-        percentage_normal: data.confidence_score,
-        recording_duration: data.recording_duration,
-      };
-
-      // Use deduplication service to prevent duplicate calls
-      const result = await requestDeduplicationService.executeRequest(
-        `${BASE_URL}/results`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestData),
-        }
-      );
-
-      console.log('HistoryService: Save recording result successful:', result);
-      return result;
-    } catch (error: any) {
-      console.error('Failed to save recording result:', error);
-      throw new Error(error.message || 'Failed to save recording result');
-    }
+    );
   }
 
   /**
    * Convert backend result to frontend Recording format
    */
   convertToRecording(result: UserResult): any {
-    const confidence = result.confidence_score ? result.confidence_score / 100 : 0.5;
-    const probability = result.disease_status === 'NORMAL' ? 1 - confidence : confidence;
+    const confidence = result.confidence_score
+      ? result.confidence_score / 100
+      : 0.5;
+    const probability =
+      result.disease_status === "NORMAL" ? 1 - confidence : confidence;
 
     return {
       id: `result_${result.id}`,
       timestamp: new Date(result.created_at),
       duration: result.recording_duration || 3,
-      audioUrl: result.audio_file_path || '',
+      audioUrl: result.audio_file_path || "",
       result: {
         probability: probability,
         confidence: confidence,
@@ -151,7 +190,7 @@ class HistoryService {
           pitch: 120,
         },
         prediction: result.disease_status,
-        normal_count: result.disease_status === 'NORMAL' ? 1 : 0,
+        normal_count: result.disease_status === "NORMAL" ? 1 : 0,
         total_words: 1,
         percentage_normal: result.confidence_score || 50,
       },
@@ -164,9 +203,11 @@ class HistoryService {
   async getRecordingHistory(): Promise<any[]> {
     try {
       const historyData = await this.getCurrentUserHistory();
-      return historyData.results.map(result => this.convertToRecording(result));
+      return historyData.results.map((result) =>
+        this.convertToRecording(result)
+      );
     } catch (error: any) {
-      console.error('Failed to get recording history:', error);
+      console.error("Failed to get recording history:", error);
       return [];
     }
   }
