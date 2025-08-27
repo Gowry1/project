@@ -10,6 +10,7 @@ const RecordingControls: React.FC = () => {
   const [recordingTime, setRecordingTime] = useState(0);
   const [countdown, setCountdown] = useState(3);
   const [isCountingDown, setIsCountingDown] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false); // Prevent double calls
   const sampleTexts = [
     "The quick brown fox jumps over the lazy dog. This sentence contains every letter of the alphabet and helps analyze speech patterns effectively.",
     "Peter Piper picked a peck of pickled peppers. A peck of pickled peppers Peter Piper picked. If Peter Piper picked a peck of pickled peppers, where's the peck of pickled peppers Peter Piper picked?",
@@ -33,13 +34,16 @@ const RecordingControls: React.FC = () => {
   // Timer update during recording with auto-stop at 8 seconds
   useEffect(() => {
     let interval: NodeJS.Timeout;
+    let hasAutoStopped = false; // Prevent multiple auto-stops
 
-    if (isRecording) {
+    if (isRecording && !isProcessing) {
       interval = setInterval(() => {
         setRecordingTime((prev) => {
           const newTime = prev + 1;
-          // Auto-stop recording after 8 seconds
-          if (newTime >= 8) {
+          // Auto-stop recording after 8 seconds (only once)
+          if (newTime >= 8 && !hasAutoStopped && !isProcessing) {
+            hasAutoStopped = true;
+            console.log("Auto-stopping recording at 8 seconds");
             // Use setTimeout to avoid state update during render
             setTimeout(() => handleStop(), 0);
           }
@@ -53,7 +57,7 @@ const RecordingControls: React.FC = () => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRecording]);
+  }, [isRecording, isProcessing]);
 
   // Countdown before recording starts
   useEffect(() => {
@@ -74,7 +78,14 @@ const RecordingControls: React.FC = () => {
   }, [isCountingDown, countdown]);
 
   const handleActualStart = async () => {
+    // Prevent multiple simultaneous calls
+    if (isRecording || isProcessing) {
+      console.log("Recording already in progress");
+      return;
+    }
+
     try {
+      console.log("Starting recording...");
       await startRecording();
     } catch (error) {
       console.error("Failed to start recording:", error);
@@ -88,7 +99,16 @@ const RecordingControls: React.FC = () => {
   };
 
   const handleStop = async () => {
+    // Prevent multiple simultaneous calls
+    if (isProcessing || !isRecording) {
+      console.log("Stop recording already in progress or not recording");
+      return;
+    }
+
+    setIsProcessing(true);
+
     try {
+      console.log("Stopping recording...");
       const result = await stopRecording();
       console.log("Recording result:", result);
 
@@ -133,6 +153,8 @@ const RecordingControls: React.FC = () => {
       console.error("Error stopping recording:", error);
       // Show user-friendly error message
       alert("Failed to process recording. Please try again.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 

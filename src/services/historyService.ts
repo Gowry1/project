@@ -1,4 +1,5 @@
 import authService from './authService';
+import requestDeduplicationService from './requestDeduplicationService';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5000';
 
@@ -95,6 +96,7 @@ class HistoryService {
     recording_duration?: number;
   }): Promise<{ message: string; result_id: number }> {
     try {
+      console.log('HistoryService: Saving recording result...');
       const accessToken = await authService.getValidAccessToken();
       if (!accessToken) {
         throw new Error('No valid access token available');
@@ -106,21 +108,20 @@ class HistoryService {
         recording_duration: data.recording_duration,
       };
 
-      const response = await fetch(`${BASE_URL}/results`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData),
-      });
+      // Use deduplication service to prevent duplicate calls
+      const result = await requestDeduplicationService.executeRequest(
+        `${BASE_URL}/results`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData),
+        }
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
+      console.log('HistoryService: Save recording result successful:', result);
       return result;
     } catch (error: any) {
       console.error('Failed to save recording result:', error);

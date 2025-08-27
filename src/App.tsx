@@ -10,6 +10,7 @@ import ResourcesPage from "./pages/ResourcesPage";
 import { AppProvider } from "./context/AppContext";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ApiDebugPanel from "./components/ApiDebugPanel";
 import "./styles/auth.css";
 
 function App() {
@@ -66,6 +67,9 @@ function App() {
             />
           </Routes>
         </Layout>
+
+        {/* API Debug Panel - only visible in development */}
+        <ApiDebugPanel isVisible={import.meta.env.DEV} />
       </Router>
     </AppProvider>
   );

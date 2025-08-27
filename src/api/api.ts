@@ -1,4 +1,5 @@
 import authService from '../services/authService';
+import requestDeduplicationService from '../services/requestDeduplicationService';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL as string;
 
@@ -35,13 +36,20 @@ console.log('API Response:', result);
 
 export const startRecording = async () => {
   try {
+    console.log('API: Starting recording request...');
     const headers = await getAuthHeaders();
-    const response = await fetch(`${BASE_URL}/start_recording`, {
-      method: 'POST',
-      headers,
-    });
 
-    return await handleApiResponse(response);
+    // Use deduplication service to prevent duplicate calls
+    const result = await requestDeduplicationService.executeRequest(
+      `${BASE_URL}/start_recording`,
+      {
+        method: 'POST',
+        headers,
+      }
+    );
+
+    console.log('API: Start recording successful:', result);
+    return result;
   } catch (error) {
     if (error instanceof Error) {
       console.error("Recording API Error:", error.message);
@@ -56,22 +64,21 @@ export const startRecording = async () => {
 
 // Stop Recording
 export const stopRecording = async () => {
-  console.log('Stop Recording API Called');
-  
   try {
-    console.log('Stop Recording API Called0222');
-    
+    console.log('API: Stopping recording request...');
     const headers = await getAuthHeaders();
-    console.log('Stop Recording API Headers:', headers);
-    
-    const response = await fetch(`${BASE_URL}/stop_recording`, {
-      method: 'POST',
-      headers,
-    });
-    console.log('Stop Recording API Response:', response);
-    
 
-    return await handleApiResponse(response);
+    // Use deduplication service to prevent duplicate calls
+    const result = await requestDeduplicationService.executeRequest(
+      `${BASE_URL}/stop_recording`,
+      {
+        method: 'POST',
+        headers,
+      }
+    );
+
+    console.log('API: Stop recording successful:', result);
+    return result;
   } catch (error) {
     if (error instanceof Error) {
       console.error("Stop Recording API Error:", error.message);
@@ -90,14 +97,22 @@ export const saveResult = async (data: {
   confidence_score?: number;
 }) => {
   try {
+    console.log('API: Saving result request...');
     const headers = await getAuthHeaders();
-    const response = await fetch(`${BASE_URL}/results`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data),
-    });
+    const body = JSON.stringify(data);
 
-    return await handleApiResponse(response);
+    // Use deduplication service to prevent duplicate calls
+    const result = await requestDeduplicationService.executeRequest(
+      `${BASE_URL}/results`,
+      {
+        method: 'POST',
+        headers,
+        body,
+      }
+    );
+
+    console.log('API: Save result successful:', result);
+    return result;
   } catch (error) {
     if (error instanceof Error) {
       console.error("Save Result API Error:", error.message);

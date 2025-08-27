@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
-import { Brain, Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles } from "lucide-react";
+import {
+  Brain,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Sparkles,
+} from "lucide-react";
 
 const LoginPage: React.FC = () => {
   const { login, isAuthenticated, isLoading } = useAppContext();
@@ -72,7 +80,7 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-2">
-            Welcome Back
+            NuroVox
           </h1>
           <p className="text-gray-600">
             Sign in to access your voice analysis dashboard
@@ -91,7 +99,10 @@ const LoginPage: React.FC = () => {
 
             {/* Email Field */}
             <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-sm font-semibold text-gray-700"
+              >
                 Email Address
               </label>
               <div className="relative">
@@ -114,7 +125,10 @@ const LoginPage: React.FC = () => {
 
             {/* Password Field */}
             <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-semibold text-gray-700"
+              >
                 Password
               </label>
               <div className="relative">
@@ -170,8 +184,8 @@ const LoginPage: React.FC = () => {
           <div className="mt-6 text-center">
             <p className="text-gray-600">
               Don't have an account?{" "}
-              <Link 
-                to="/register" 
+              <Link
+                to="/register"
                 className="font-semibold text-blue-600 hover:text-purple-600 transition-colors duration-200"
               >
                 Create one here

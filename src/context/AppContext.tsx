@@ -7,7 +7,7 @@ import {
   RegisterRequest,
 } from "../types";
 import { generateMockRecordings } from "../utils/mockData";
-import { startRecording as apiStartRecording } from "../api/api";
+import { startRecording as apiStartRecording, stopRecording as apiStopRecording } from "../api/api";
 import authService from "../services/authService";
 
 interface AppContextType {
@@ -214,7 +214,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const startRecording = async () => {
+    // Prevent multiple simultaneous calls
+    if (isRecording) {
+      console.log("Start recording called but already recording");
+      return;
+    }
+
     try {
+      console.log("AppContext: Starting recording...");
+
       // Request microphone access
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -272,46 +280,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const stopRecording = async (): Promise<RecordingResult> => {
+    // Prevent multiple simultaneous calls
+    if (!isRecording) {
+      console.log("Stop recording called but not currently recording");
+      throw new Error("Not currently recording");
+    }
+
     try {
+      console.log("AppContext: Stopping recording...");
+
       // Stop the MediaRecorder if it exists
       if (mediaRecorder && mediaRecorder.state === "recording") {
         mediaRecorder.stop();
 
-        // Wait for the recording to finish and get the audio blob
+        // Wait for the recording to finish
         await new Promise<void>((resolve) => {
           mediaRecorder.onstop = () => resolve();
         });
       }
 
-      // Create audio blob from chunks
+      // Create audio blob from chunks (for potential future use)
       const audioBlob = new Blob(audioChunks, {
         type: "audio/webm;codecs=opus",
       });
 
-      // Only send audio if we have actual data
-      if (audioBlob.size === 0) {
-        throw new Error("No audio data recorded");
-      }
+      console.log("Audio blob created:", audioBlob.size, "bytes");
 
-      // Send audio data to backend
-      const formData = new FormData();
-      formData.append("audio", audioBlob, "recording.webm");
+      // Call the backend stop_recording API (no file upload needed)
+      // The backend handles audio recording via pyaudio
+      const result: RecordingResult = await apiStopRecording();
 
-      const token = await authService.getValidAccessToken();
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/stop_recording`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
-
-      const result: RecordingResult = await response.json();
-
-      if (!response.ok || result.status !== "success") {
+      if (result.status !== "success") {
         throw new Error(result?.prediction || "Failed to stop recording");
       }
 
