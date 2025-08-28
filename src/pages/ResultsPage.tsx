@@ -35,6 +35,7 @@ const ResultsPage: React.FC = () => {
   }
 
   const handleNew = () => {
+    setCurrentRecording(null);
     navigate("/record");
   };
 
